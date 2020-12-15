@@ -29,7 +29,7 @@ class ImJoyPlugin{
     }
     async run(ctx){
         // create an imjoy app window
-        const imjoy = await api.createWindow({src: "https://imjoy.io/#/app?workspace=sandbox&flags=quite"});
+        const imjoy = await api.createWindow({src: "https://imjoy.io/#/app?workspace=sandbox&flags=quiet"});
         imjoy.getPlugin("https://github.com/fish-quant/fq-imjoy/blob/master/imjoy-plugins/FISH-quant.imjoy.html").then((plugin)=>{plugin.run({config: {}, data: {}})})
     }
 }
