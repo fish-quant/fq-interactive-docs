@@ -1,10 +1,8 @@
 [![powered by ImJoy](https://imjoy.io/static/badge/powered-by-imjoy-badge.svg)](https://imjoy.io/)
 
-# ImJoy Docs: Interactive Documentation Made Easy!
-With this tool, you can easily build interactive documentation from markdown files. Readers can try your tool directly in the documentation.
+# Interactive documentation for FISH-quant and ImJoy
 
-[Read More](https://imjoy-team.github.io/imjoy-docs/)
+Here we provide an interactive documentation to showcast some of the ImJoy plugins 
+that can be used in the analysis and interpretation of smFISH images. 
 
-# License
-
-MIT
+The documentation is live [**here**](https://fish-quant.github.io/fq-interactive-docs/).
