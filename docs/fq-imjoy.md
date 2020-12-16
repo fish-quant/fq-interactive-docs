@@ -30,7 +30,7 @@ class ImJoyPlugin{
     async run(ctx){
         // create an imjoy app window
         // use imjoy.createWindow instead of api.createWindow will make the window appear inside the embedded ImJoy App
-        const imjoy = await api.createWindow({src: "https://imjoy.io/#/app?workspace=sandbox&flags=quite"});
+        const imjoy = await api.createWindow({src: "https://imjoy.io/#/app?workspace=sandbox&flags=quiet"});
 
         // Start FISH-quant
         const plugin = await imjoy.getPlugin("https://github.com/fish-quant/fq-imjoy/blob/master/imjoy-plugins/FISH-quant.imjoy.html")
