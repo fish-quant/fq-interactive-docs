@@ -6,7 +6,7 @@ We provide several plugins to provide a convenient user-interface permitting the
 analysis tasks.
 
 to get a first feeling for how the data processing with FISH-quant looks like when using
-our ImJoy plugins, you can use the embedded version below. For this, simply press on the `Run` button. 
+our ImJoy plugins, you can use the embedded version below. For this, simply press on the `Run` button.
 
 ## IMPORTANT - please read
 
@@ -28,11 +28,10 @@ class ImJoyPlugin{
     async setup(){
     }
     async run(ctx){
-
         // create an imjoy app window
         // use imjoy.createWindow instead of api.createWindow will make the window appear inside the embedded ImJoy App
         const imjoy = await api.createWindow({src: "https://imjoy.io/#/app?workspace=sandbox&flags=quite"});
-        
+
         // Start FISH-quant
         const plugin = await imjoy.getPlugin("https://github.com/fish-quant/fq-imjoy/blob/master/imjoy-plugins/FISH-quant.imjoy.html")
         await plugin.run({config: {}, data: {}})
@@ -55,6 +54,5 @@ api.export(new ImJoyPlugin())
     4. Process all images.
 
 ## Analyzing your own data
-
 
 ## Local installation
