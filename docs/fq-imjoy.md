@@ -31,17 +31,20 @@ class ImJoyPlugin{
         // create an imjoy app window
         // use imjoy.createWindow instead of api.createWindow will make the window appear inside the embedded ImJoy App
         const imjoy = api; //await api.createWindow({src: "https://imjoy.io/#/app?workspace=sandbox&flags=quiet"});
-        try{
-            const engine = await imjoy.getPlugin("Jupyter-Engine-Manager")
-            await engine.createEngine({
+        
+       // Connect to mybinder 
+       try{
+            const engineManager = await imjoy.getPlugin("Jupyter-Engine-Manager")
+            await engineManager.createEngine({
                                     name: "MyBinder Engine",
                                     url: "https://mybinder.org",
                                     spec: "oeway/imjoy-binder-image/master"
                                 })
         }
         catch(e){
-            await imjoy.alert("Failed to add Jupyter notebook engine (on binder), error: " + e.toString())
+            await imjoy.alert("Failed to connect to Jupyter notebook engine on MyBinder.org, error: " + e.toString())
         }
+
         // Start FISH-quant
         const plugin = await imjoy.getPlugin("https://github.com/fish-quant/fq-imjoy/blob/master/imjoy-plugins/FISH-quant.imjoy.html")
         await plugin.run({config: {}, data: {}})
