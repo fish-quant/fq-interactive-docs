@@ -40,7 +40,7 @@ class ImJoyPlugin{
                                 })
         }
         catch(e){
-            await imjoy.alert("Failed to add Jupyter notebook engine, error: " + e.toString())
+            await imjoy.alert("Failed to add Jupyter notebook engine (on binder), error: " + e.toString())
         }
         // Start FISH-quant
         const plugin = await imjoy.getPlugin("https://github.com/fish-quant/fq-imjoy/blob/master/imjoy-plugins/FISH-quant.imjoy.html")
