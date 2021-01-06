@@ -1,2 +1,5 @@
- * [Home](/)
-* [FISH-quant in ImJoy](/fq-imjoy)
+<!-- docs/_sidebar.md -->
+
+* [FISH-quant & ImJoy](/)
+* Tutorials
+* [RNA detection in ImJoy](/fq-imjoy "The greatest guide in the world")
