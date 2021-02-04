@@ -18,3 +18,4 @@ If you want to know more about this project, you can
 ## List of tutorials
 
 1. **FISH-quant in ImJoy**: in this [tutorial](fq-imjoy.md) we show how to detect RNAs in smFISH images.
+2. **Interactive data exploration**: [here](rnaloc-tsne.md) we present an ImJoy plugin that allows to interactively explore t-SNE plot grouping cells by their similarity in RNA localization.
