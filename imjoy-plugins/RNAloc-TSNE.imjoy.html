@@ -1,0 +1,523 @@
+﻿<docs lang="markdown">
+
+This plugin allows to visualize results of a classification of 
+RNA localization in Hela cells. 
+
+For more details on the biology, see Chouaib et al., A Dual Protein-mRNA Localization Screen Reveals 
+Compartmentalized Translation and Widespread Co-translational RNA Targeting, Developmental Cell, 2020
+https://www.sciencedirect.com/science/article/abs/pii/S1534580720305840
+
+Plots shows a t-SNE projection. Each dot is a celland when clicking on a 
+dot, the corresponding image is displayed together with information about the cell line. 
+The plugin also allows to search for a gene, or a localization pattern.  
+
+</docs>
+
+<config lang="json">
+{
+    "name": "RNAloc-TSNE",
+    "type": "window",
+    "tags": [],
+    "ui": "Explore protein localization patterns in HPA images.",
+    "version": "0.1.0",
+    "api_version": "0.1.8",
+    "description": "Explore protein localization patterns in HPA images.",
+    "icon": "photo",
+    "inputs": null,
+    "outputs": null,
+    "requirements": [
+    "https://cdn.plot.ly/plotly-latest.min.js",
+    "https://cdn.jsdelivr.net/npm/papaparse@5.2.0/papaparse.min.js",
+    "https://cdn.jsdelivr.net/npm/vue@2.6.10/dist/vue.min.js",
+    "https://unpkg.com/spectre.css/dist/spectre.min.css",
+    "https://unpkg.com/spectre.css/dist/spectre-exp.min.css",
+    "https://unpkg.com/spectre.css/dist/spectre-icons.min.css"],
+    "dependencies": [],
+    "defaults": {"w": 50, "h":20, "fullscreen": true},
+    "cover": "https://imjoy-team.github.io/imjoy-plugins/hpa-umap/hpa-umap-cover.gif"
+}
+</config>
+
+<script lang="javascript">
+function gaussianRand() {
+  var rand = 0;
+  for (var i = 0; i < 6; i += 1) {
+    rand += Math.random();
+  }
+  return (rand / 6) - 0.5;
+}
+
+function transpose(data) {
+  let result = {};
+  for (let row of data) {
+    for (let [key, value] of Object.entries(row)) {
+      result[key] = result[key] || [];
+      result[key].push(value);
+    }
+  }
+  return result;
+}
+
+const convertBase64ToFile = function(image) {
+  let mime = image.match(/data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+).*,.*/);
+  if (mime && mime.length) {
+    mime = mime[1];
+  }
+
+  let ab
+  if (mime === 'image/svg+xml') {
+    const byteString = image.split(',')[1];
+    ab = decodeURIComponent(byteString)
+  } else {
+    const byteString = atob(image.split(',')[1]);
+    ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i += 1) {
+      ia[i] = byteString.charCodeAt(i);
+    }
+  }
+  const newBlob = new Blob([ab], {
+    type: mime,
+  });
+
+  return newBlob;
+};
+
+const COLORS = [
+  '#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5',
+  '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50',
+  '#8bc34a', '#cddc39', '#ffeb3b', '#ffc107', '#ff9800',
+  '#ff5722', '#795548', '#009e9e', '#607d8b', '#d500f9',
+  '#212121', '#ff9e80', '#ff6d00', '#ffff00', '#76ff03',
+  '#00e676', '#64ffda', '#18ffff',
+]
+
+class ImJoyPlugin {
+  async setup() {
+    const self = this
+    this.store = {
+      images: [],
+      selected_table: null,
+      current_filter: '',
+      tables: {
+        "2D": "https://dl.dropbox.com/s/xio854zrw1rcj6q/tsne_interactive.csv",
+      },
+      table_localization_classes: {
+        "None": null,
+        "Random": "probability_random",
+        "Intranuclear": "probability_intranuclear",
+        "Nuclear ": "probability_nuclear",
+        "Perinuclear": "probability_perinuclear",
+        "Protrusion": "probability_protrusion",
+        "Foci": "probability_foci",
+      },
+
+      current_index: 0,
+      loading: true,
+      thumbnail: null,
+      search_text: ''
+    }
+    this.app = new Vue({
+      el: '#app',
+      data: this.store,
+      methods: {
+
+        loadTable(url) {
+          this.selected_table = url;
+          if (this.tables[url]) {
+            url = this.tables[url]
+          }
+          this.loading = true;
+          Papa.parse(url, {
+            download: true,
+            header: true,
+            dynamicTyping: true,
+            skipEmptyLines: true,
+            error: (err, file, inputElem, reason) => {
+              api.alert('Falied to load the table: ' + reason.toString())
+              this.loading = false
+              this.$forceUpdate()
+            },
+            complete: (results) => {
+              for (let loc of results.data) {
+                if (loc.gene && loc.cell_line)
+                  loc.info = loc.gene + '(' + loc.cell_line + ')' + ': ' + loc.location
+                else
+                  loc.info = loc.cell
+              }
+              console.log('===============>', results)
+              self.umap_data = results.data
+              try {
+                self.updateUmap(self.umap_data, this.current_filter, null, self.umap_data[0].z ? true : false)
+              } finally {
+                this.loading = false
+                this.$forceUpdate()
+              }
+
+            }
+          })
+        },
+
+        openImage(url) {
+          api.utils.openUrl(url)
+        },
+
+        async showImage(obj) {
+          this.images.push(obj)
+          if (this.images.length > 5) {
+            this.images.shift()
+          }
+          this.current_index = this.images.length - 1
+        },
+
+        showThumbnail(obj) {
+          this.thumbnail = obj
+        },
+
+        async search(text) {
+          this.loading = true;
+          try {
+            await self.updateUmap(self.umap_data, text, null, self.umap_data[0].z ? true : false)
+          } finally {
+            this.loading = false;
+          }
+
+        },
+
+        async select_class(class_prob) {
+          console.log(class_prob)
+          this.loading = true;
+          try {
+            await self.updateUmap(self.umap_data, null, class_prob, self.umap_data[0].z ? true : false)
+          } finally {
+            this.loading = false;
+          }
+
+        },
+
+        async selectFileChanged(event) {
+          const file = event.target.files[0];
+          if (file) {
+            this.loadTable(file, )
+          }
+        }
+      }
+    })
+  }
+
+  // Specify scatter plot with plotly  
+  async plot(data) {
+    document.getElementById('chart').innerHTML = ''
+    
+    const updatemenus = [{
+      buttons: [{
+          args: [{
+            'marker.size': 16
+          }],
+          label: 'marker size: 16',
+          method: 'restyle'
+        },
+        {
+          args: [{
+            'marker.size': 8
+          }],
+          label: 'marker size: 8',
+          method: 'restyle'
+        },
+        {
+          args: [{
+            'marker.size': 4
+          }],
+          label: 'marker size: 4',
+          method: 'restyle'
+        },
+        {
+          args: [{
+            'marker.size': 2
+          }],
+          label: 'marker size: 2',
+          method: 'restyle'
+        },
+        {
+          args: [{
+            'marker.size': 1
+          }],
+          label: 'marker size: 1',
+          method: 'restyle'
+        }
+      ],
+      direction: 'down',
+      pad: {
+        'r': 0,
+        't': 0
+      },
+      showactive: true,
+      type: 'dropdown',
+      x: 0.8,
+      xanchor: 'left',
+      y: 1.05,
+      yanchor: 'top'
+    }]
+
+    const layout = {
+      hovermode: 'closest',
+      title: 'RNA localization in HeLa cells (cells: ' + data[0].x.length + ')',
+      xaxis: {
+        showticklabels: false,
+        nticks: 10,
+        domain: [-100, 100],
+        range: [-100, 100],
+        zeroline: false
+      },
+      yaxis: {
+        showticklabels: false,
+        nticks: 10,
+        domain: [-100, 100],
+        range: [-100, 100],
+        zeroline: false
+      },
+      updatemenus: updatemenus
+    }
+
+    this.umap_chart = await Plotly.newPlot('chart', data, layout, {
+      responsive: true
+    })
+
+    window.addEventListener('resize', () => {
+      Plotly.relayout('chart', {
+        width: document.getElementById('chart').clientWidth,
+        height: document.getElementById('chart').clientHeight
+      })
+    });
+
+    document.getElementById('chart').on('plotly_click', async (data) => {
+      for (var i = 0; i < data.points.length; i++) {
+        
+        console.log('====>', data.points[i].customdata)
+
+        // const image_base_url = 'https://images.proteinatlas.org/' + id.split('_')[0] + '/' + id.split('_')[1] + '_' + id.split('_')[2] + '_' + id.split('_')[3]
+        let cell_name = data.points[i].customdata.cell
+        const image_url = 'https://imjoy-s3.pasteur.fr/fq-imjoy/tsne/img-smfish/' + cell_name + '.png'
+        
+        /* With consistenly constructed file-names, information could be extracted here
+        let gene = data.points[i].customdata.cell.split('_')[0]
+        */
+        
+        await this.app.showImage({
+          url: image_url,
+          meta: data.points[i].customdata
+        })
+    
+        /* TODO: will require adding thumbnails to the S3
+        const thumbnail_url = 'https://images.proteinatlas.org/' + id.split('_')[0] + '/' + id.split('_')[1] + '_' + id.split('_')[2] + '_' + id.split('_')[3] + '_blue_red_green_yellow_thumb.jpg'
+        this.app.showThumbnail({
+          url: thumbnail_url,
+          meta: data.points[i].customdata
+        })
+        */
+
+        document.getElementById('chart_loc').innerHTML = ''        
+        var data = [
+          {
+            type: 'bar',
+            y: ['Intranuclear', 'Nuclear', 'Perinuclear', 'Protrusion', 'Foci', 'Random'],
+            x: [data.points[i].customdata.probability_intranuclear, 
+                data.points[i].customdata.probability_nuclear,
+                data.points[i].customdata.probability_perinuclear,
+                data.points[i].customdata.probability_protrusion,
+                data.points[i].customdata.probability_foci,
+                data.points[i].customdata.probability_random],
+            orientation: 'h',    
+            
+          }
+        ];
+
+        Plotly.newPlot('chart_loc', data);
+        
+        const screen_width = window.innerWidth ||
+          document.documentElement.clientWidth ||
+          document.body.clientWidth;
+        if (screen_width < 1024) window.scrollTo(0, document.body.scrollHeight);
+      }
+    });
+
+    document.getElementById('chart').on('plotly_hover', async (data) => {
+      for (var i = 0; i < data.points.length; i++) {
+        const id = data.points[i].customdata.id
+        /* TODO: will require adding thumbnails to the S3
+        const thumbnail_url = `https://imjoy-s3.pasteur.fr/fq-imjoy/tsne/img-smfish/AKAP1_adham_nopuro_racha_nodrug_1_0_cell_0.png`
+        this.app.showThumbnail({
+          url: thumbnail_url,
+          meta: data.points[i].customdata
+        })
+        */
+      }
+    });
+  }
+
+  async updateUmap(table, filter, class_prob, remove) {
+    
+    console.log(class_prob)
+
+    filter = (filter || '') && filter.trim()
+    this.app.current_filter = filter;
+
+    let filter_func
+    
+    // >>> Define filter on table and apply if enabled
+    const filters = filter.split(' ')
+    filter_func = (row) => {
+    let ret = false
+    for (let filter of filters) {
+        ret = ret || (!filter || row.gene === filter || row['gene_ensembl_id'] === filter || row['cell_line'] === filter || row['id'] === filter || row['location'].includes(filter))
+    }
+    return row.gene && ret
+    }
+ 
+    if (remove) {
+      table = table.filter(filter_func)
+    }
+
+    this.filtered_table = table;
+    console.log('filtered: ', this.filtered_table)
+
+    // No results found
+    if (table.length <= 0) {
+      await api.alert('No image found.')
+      return
+    }
+    await api.showMessage(table.length + ' images found.')
+
+    const dataObj = transpose(table)
+
+    const color_map = {}
+    for (let i = 0; i < COLORS.length; i++) {
+      color_map[i] = COLORS[i]
+    }
+    
+    // >>> Create scatter plot
+    const data = [{
+      type: dataObj.z ? "scatter3d" : "scattergl",    // Assign based on presence of z coordinates
+      mode: "markers",
+      marker: {
+        size: dataObj.z ? 3 : 5,
+        color: class_prob ? dataObj[class_prob] : '#5F6A6A'
+      },
+      text: dataObj.info,
+      x: dataObj.x,
+      y: dataObj.y,
+      z: dataObj.z,
+      customdata: table
+    }]
+    this.plot(data)
+  }
+  async run(my) {
+    await this.app.loadTable('2D')
+  }
+}
+
+api.export(new ImJoyPlugin())
+</script>
+
+
+<window lang="html">
+  <div id="app">
+    <header class="navbar">
+      <input id="file" style="display:none;" type="file" webkitdirectory mozdirectory msdirectory odirectory directory multiple @change="selectFileChanged" />
+      <section class="navbar-section">
+        <a class="navbar-brand mr-2">RNA localization Explorer</a>
+
+        <!-- Dropdown to select localization class -->
+        <div class="dropdown hide-sm">
+          <a href="#" class="btn btn-link dropdown-toggle" tabindex="0">
+            <i class="fas fa-folder-plus icon-size-position"></i>
+            <label class="hide-sm">Localization classification</label> <i class="icon icon-caret hide-sm"></i>
+          </a>
+          <ul class="menu">
+            <li v-for="class_prob, name in table_localization_classes" :key="name">
+              <a href="#" @click="select_class(class_prob)" class="btn btn-link">
+                {{name}}
+              </a>
+            </li>
+          </ul>
+        </div>
+
+      </section>
+      <section class="navbar-section">
+        <div class="input-group input-inline">
+          <input class="form-input" type="text" v-model="search_text" @keyup.enter="search(search_text)" placeholder="search">
+          <button class="btn btn-primary input-group-btn" @click="search(search_text)">Search</button>
+        </div>
+      </section>
+    </header>
+    <div class="container">
+      <div class="loading loading-lg" v-if="loading">Loading...</div>
+      <div class="columns" v-show="!loading">
+        <div id="chart" class="column col-2"></div>
+        
+        <div id="image-container" class="column col-2">
+          <img v-if="thumbnail" class="img-responsive rounded hpa-thumbnail" :src="thumbnail.url" :alt="thumbnail.meta.id"></img>
+          <div v-if="images[current_index]" style="text-align: center;">
+            <br>
+            <p>Image name: {{images[current_index].meta['cell']}}</p>             
+            <button class="btn" @click="openImage(images[current_index].url)">Open in new tab  <i class="icon icon-share"></i></button>
+          </div>
+          <h2 v-else>
+            <br>
+            Click on a data point to see the sample image.
+          </h2>
+
+          <div class="carousel">
+            <!-- carousel locator -->
+            <input class="carousel-locator" v-for="(img, i) in images" :id="'slide-'+i" type="radio" name="carousel-radio" hidden="" v-model="current_index" :value="i" checked="">
+
+            <!-- carousel container -->
+            <div class="carousel-container">
+              <!-- carousel item -->
+              <figure class="carousel-item" v-for="(img, i) in images">
+                <img class="img-responsive rounded" :src="img.url" :alt="img.meta.id" @click="openImage(images[current_index].url)">
+              </figure>
+
+            </div>
+            <!-- carousel navigation -->
+            <div class="carousel-nav">
+              <label class="nav-item text-hide c-hand" v-for="(img, i) in images" :for="'slide-'+i">{{img.meta.id}}</label>
+            </div>
+          </div>
+          <div id="chart_loc" class="column col-2"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</window>
+
+<style lang="css">
+#chart{
+    width: 800px;
+    height: 800px;
+    max-width: calc( 100% + 140px );
+    margin-left: -70px;
+}
+
+#chart_loc{
+    text-align: center;
+    width: 350px;
+    height: 300px;
+    max-width: 100%;
+}
+#image-container{
+    text-align: center;
+    width: 350px;
+    height: 350px;
+    max-width: 100%;
+}
+.carousel{
+    margin: 20px;
+}
+
+.hpa-thumbnail{
+    position: absolute;
+    left: 30px;
+    top: 100px;
+}
+</style>

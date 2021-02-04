@@ -1,0 +1,37 @@
+{
+ "name": "ImJoy Repository",
+ "description": "ImJoy plugin repository.",
+ "uri_root": "",
+ "version": "0.2.0",
+ "plugins": [
+  {
+   "name": "RNAloc-TSNE",
+   "type": "window",
+   "tags": [],
+   "ui": "Explore protein localization patterns in HPA images.",
+   "version": "0.1.0",
+   "api_version": "0.1.8",
+   "description": "Explore protein localization patterns in HPA images.",
+   "icon": "photo",
+   "inputs": null,
+   "outputs": null,
+   "requirements": [
+    "https://cdn.plot.ly/plotly-latest.min.js",
+    "https://cdn.jsdelivr.net/npm/papaparse@5.2.0/papaparse.min.js",
+    "https://cdn.jsdelivr.net/npm/vue@2.6.10/dist/vue.min.js",
+    "https://unpkg.com/spectre.css/dist/spectre.min.css",
+    "https://unpkg.com/spectre.css/dist/spectre-exp.min.css",
+    "https://unpkg.com/spectre.css/dist/spectre-icons.min.css"
+   ],
+   "dependencies": [],
+   "defaults": {
+    "w": 50,
+    "h": 20,
+    "fullscreen": true
+   },
+   "cover": "https://imjoy-team.github.io/imjoy-plugins/hpa-umap/hpa-umap-cover.gif",
+   "uri": "imjoy-plugins\\RNAloc-TSNE.imjoy.html"
+  }
+ ],
+ "collections": []
+}
