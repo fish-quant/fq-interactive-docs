@@ -19,7 +19,7 @@ The plugin also allows to search for a gene, or a localization pattern.
     "type": "window",
     "tags": [],
     "ui": "Explore protein localization patterns in HPA images.",
-    "version": "0.1.2",
+    "version": "0.1.3",
     "api_version": "0.1.8",
     "description": "Explore protein localization patterns in HPA images.",
     "icon": "photo",
@@ -316,7 +316,17 @@ class ImJoyPlugin {
         })
         */
 
-        document.getElementById('chart_loc').innerHTML = ''        
+        document.getElementById('chart_loc').innerHTML = ''
+
+        // >>> Create scatter plot
+        const layout = {
+          hovermode: 'closest',
+          xaxis: {
+            domain: [0, 1],
+            range: [0, 1],
+          },
+        }
+
         var data = [
           {
             type: 'bar',
@@ -332,7 +342,7 @@ class ImJoyPlugin {
           }
         ];
 
-        Plotly.newPlot('chart_loc', data);
+        Plotly.newPlot('chart_loc', data, layout);
         
         const screen_width = window.innerWidth ||
           document.documentElement.clientWidth ||
@@ -409,7 +419,6 @@ class ImJoyPlugin {
       })
     }
 
-    // >>> Create scatter plot
     const data = [{
       type: dataObj.z ? "scatter3d" : "scattergl",    // Assign based on presence of z coordinates
       mode: "markers",
