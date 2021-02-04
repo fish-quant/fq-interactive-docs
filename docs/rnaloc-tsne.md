@@ -28,16 +28,14 @@ This plugin will retrieve the data, and show the t-SNE. **This plot is interacti
 You can **run this plugin** either
 
 - in a separate browser tab by clicking [**here**](https://imjoy.io/lite?plugin=https://github.com/fish-quant/fq-interactive-docs/blob/main/imjoy-plugins/RNAloc-TSNE.imjoy.html).
-- directly in this documentation by press the `Run` button below. This will start an ImJoy instance and start the plugin.
+- directly in this documentation by press the `Run` button below.
 
 <!-- ImJoyPlugin: { "type": "web-worker", "hide_code_block": true} -->
 ```js
 class ImJoyPlugin {
     async setup() {}
     async run(ctx) {
-        const imjoy = await api.createWindow({src: "https://imjoy.io/#/app?w=sandbox", name: "ImJoy"})
-        const annotator = await imjoy.getPlugin('https://github.com/fish-quant/fq-interactive-docs/blob/main/imjoy-plugins/RNAloc-TSNE.imjoy.html')
-        await annotator.run()
+        await api.createWindow({src: 'https://github.com/fish-quant/fq-interactive-docs/blob/main/imjoy-plugins/RNAloc-TSNE.imjoy.html'})
     }
 }
 api.export(new ImJoyPlugin())
