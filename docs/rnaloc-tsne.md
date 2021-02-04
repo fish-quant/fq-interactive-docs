@@ -22,8 +22,9 @@ To illustrate how ImJoy can be used to create interactive data inspection tools,
 This plugin will retrieve the data, and show the t-SNE. **This plot is interactive**, so play around!
 
 - Each dot is a cell, when clicking on it the corresponding image will open and also a bar plot with the localization classes. 
-- You can zoom into the plot
-- In the menu you can find a dropdown menu where you can select the different localization classes, once selected the plot will be color coded according to the assigned probability for this classes.
+- You can **zoom into** the plot to better resolve dense regions.
+- In the menu you can find a dropdown menu where you can select the **different localization classes**, once selected the plot will be color coded according to the assigned probability for this classes.
+- In the search box (upper right corner), you can **search for any string contained in the file-name**, e.g. `Rab13`, to specifically show these cells.
 
 You can **run this plugin** either
 

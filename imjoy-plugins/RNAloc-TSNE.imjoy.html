@@ -19,7 +19,7 @@ The plugin also allows to search for a gene, or a localization pattern.
     "type": "window",
     "tags": [],
     "ui": "Explore protein localization patterns in HPA images.",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "api_version": "0.1.8",
     "description": "Explore protein localization patterns in HPA images.",
     "icon": "photo",
@@ -33,7 +33,7 @@ The plugin also allows to search for a gene, or a localization pattern.
     "https://unpkg.com/spectre.css/dist/spectre-exp.min.css",
     "https://unpkg.com/spectre.css/dist/spectre-icons.min.css"],
     "dependencies": [],
-    "defaults": {"w": 50, "h":20, "fullscreen": true},
+    "defaults": {"w": 50, "h":20, "fullscreen": true, "as_dialog": true},
     "cover": "https://imjoy-team.github.io/imjoy-plugins/hpa-umap/hpa-umap-cover.gif"
 }
 </config>
@@ -357,23 +357,20 @@ class ImJoyPlugin {
 
   async updateUmap(table, filter, class_prob, remove) {
     
-    console.log(class_prob)
-
+    // >>> Define filter on table and apply if enabled
     filter = (filter || '') && filter.trim()
     this.app.current_filter = filter;
 
-    let filter_func
-    
-    // >>> Define filter on table and apply if enabled
     const filters = filter.split(' ')
-    filter_func = (row) => {
+    let filter_func = (row) => {
     let ret = false
     for (let filter of filters) {
-        ret = ret || (!filter || row.gene === filter || row['gene_ensembl_id'] === filter || row['cell_line'] === filter || row['id'] === filter || row['location'].includes(filter))
+        ret = ret || (!filter || row['cell'].toLowerCase().includes(filter.toLowerCase())) // case-insensitive search
     }
-    return row.gene && ret
+    return row.cell && ret
     }
- 
+    
+
     if (remove) {
       table = table.filter(filter_func)
     }
@@ -383,7 +380,7 @@ class ImJoyPlugin {
 
     // No results found
     if (table.length <= 0) {
-      await api.alert('No image found.')
+      await api.alert('No image found with search term.')
       return
     }
     await api.showMessage(table.length + ' images found.')
@@ -395,14 +392,31 @@ class ImJoyPlugin {
       color_map[i] = COLORS[i]
     }
     
+    // Color-coding
+    // When class_prob: use this code. 
+    // When search-term: color code according to this
+
+    let color
+    if (class_prob) {
+      color = dataObj[class_prob]
+    } else {
+      color = dataObj.cell.map((name, index) => {
+        if ((!remove && !filter_func(table[index]))) {
+          return '#cccccc'
+        } else {
+          return '#0da846'
+        }
+      })
+    }
+
     // >>> Create scatter plot
     const data = [{
       type: dataObj.z ? "scatter3d" : "scattergl",    // Assign based on presence of z coordinates
       mode: "markers",
       marker: {
         size: dataObj.z ? 3 : 5,
-        color: class_prob ? dataObj[class_prob] : '#5F6A6A'
-      },
+        color:  color   
+        },
       text: dataObj.info,
       x: dataObj.x,
       y: dataObj.y,
