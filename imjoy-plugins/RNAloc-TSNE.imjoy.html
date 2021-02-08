@@ -19,7 +19,7 @@ The plugin also allows to search for a gene, or a localization pattern.
     "type": "window",
     "tags": [],
     "ui": "Explore protein localization patterns in HPA images.",
-    "version": "0.1.4",
+    "version": "0.1.5",
     "api_version": "0.1.8",
     "description": "Explore protein localization patterns in HPA images.",
     "icon": "photo",
@@ -118,6 +118,7 @@ class ImJoyPlugin {
       current_filter: "",
       tables: {
         "2D": "https://dl.dropbox.com/s/t48o1qbggye3tof/rnaloc_tsne_2d.csv",
+        "3D": "https://dl.dropbox.com/s/rlkv8hzbl9thkkn/rnaloc_tsne_3d.csv",
       },
       table_localization_classes: {
         None: null,
@@ -566,6 +567,12 @@ api.export(new ImJoyPlugin())
 
             <section class="navbar-section">
                 <a class="navbar-brand mr-2">RNA localization Explorer</a>
+
+                <!-- Dropdown to select 2D or 3D -->
+                <div class="btn-group btn-group-block">
+                    <button @click="loadTable('2D')" class="btn" :class="{'btn-primary': selected_table==='2D'}">2D</button>
+                    <button @click="loadTable('3D')" class="btn" :class="{'btn-primary': selected_table==='3D'}">3D</button>
+                </div> 
 
                 <!-- Dropdown to select localization class -->
                 <div class="dropdown hide-sm">

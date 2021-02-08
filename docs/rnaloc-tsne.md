@@ -29,6 +29,7 @@ This plugin will retrieve the data, and show the t-SNE. **This plot is interacti
     We estimated this probability with an automated classification approach (for more details consult the paper).
     **different localization classes**, once selected the plot will be color coded according to the assigned probability for this classes.
 - In the search box (upper right corner), you can **search for any string contained in the file-name**, e.g. `Rab13`, to specifically show these cells.
+- The toggle switch allows you to visualize **2D or 3D t-sne**. Both, are fully interactive.
 
 You can **run this plugin** either
 
