@@ -19,7 +19,7 @@ The plugin also allows to search for a gene, or a localization pattern.
     "type": "window",
     "tags": [],
     "ui": "Explore protein localization patterns in HPA images.",
-    "version": "0.1.5",
+    "version": "0.1.6",
     "api_version": "0.1.8",
     "description": "Explore protein localization patterns in HPA images.",
     "icon": "photo",
@@ -551,6 +551,13 @@ class ImJoyPlugin {
   }
   async run(my) {
     await this.app.loadTable("2D");
+
+    // Check if browser is Safari --> not all functionality is guaranteed
+    var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+    if (! isSafari){
+      api.alert('It seems that you are using Safari. Due to a bug in the plotting library, not all functionality is available. We recommend using Chrome instead.')
+    }
   }
 }
 

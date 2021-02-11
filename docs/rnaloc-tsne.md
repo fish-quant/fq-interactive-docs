@@ -2,7 +2,9 @@
 
 # Data visualization and inspection in ImJoy
 
-## Motivation 
+!> This plugin works in **Chrome, Firefox, and Edge**. However, due to a bug out of our control displaying the images of individual cells does not work in Safari.
+
+## Motivation
 
 ImJoy permits to build plugins using state-of-art visualization tools.
 

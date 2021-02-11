@@ -9,7 +9,7 @@
    "type": "window",
    "tags": [],
    "ui": "Explore protein localization patterns in HPA images.",
-   "version": "0.1.5",
+   "version": "0.1.6",
    "api_version": "0.1.8",
    "description": "Explore protein localization patterns in HPA images.",
    "icon": "photo",
