@@ -555,7 +555,7 @@ class ImJoyPlugin {
     // Check if browser is Safari --> not all functionality is guaranteed
     var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
-    if (! isSafari){
+    if (isSafari){
       api.alert('It seems that you are using Safari. Due to a bug in the plotting library, not all functionality is available. We recommend using Chrome instead.')
     }
   }
